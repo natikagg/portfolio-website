@@ -5,7 +5,6 @@ export default function About() {
       <div className="prose dark:prose-invert max-w-none">
         <p className="text-lg">
           I am a passionate software developer with expertise in building modern web applications.
-          {/* Add your personal description here */}
         </p>
       </div>
     </section>
