@@ -7,6 +7,7 @@ interface GridCell {
   y: number;
   color: string;
   alpha: number;
+  lastPainted: number;
 }
 
 export default function Background() {
@@ -51,6 +52,8 @@ export default function Background() {
       const cols = Math.ceil(rect.width / CELL_SIZE);
       const rows = Math.ceil(rect.height / CELL_SIZE);
 
+      // Initialize grid with current timestamp for lastPainted
+      const now = performance.now();
       grid = Array(rows)
         .fill(null)
         .map((_, row) =>
@@ -61,7 +64,7 @@ export default function Background() {
               y: row * CELL_SIZE,
               color: colors[(col + row) % colors.length],
               alpha: 0,
-              lastPainted: 0,
+              lastPainted: now
             }))
         );
     };
@@ -81,18 +84,16 @@ export default function Background() {
         cellY >= 0 &&
         cellY < grid.length
       ) {
-        // Generate a random width between 1 and 3
         const randomWidth = Math.floor(Math.random() * 0.1) + 1;
-        console.log(randomWidth);
+        const currentTime = performance.now();
     
-        // Adjust the range of affected cells based on the random width
         for (let dy = -randomWidth; dy <= randomWidth; dy++) {
           for (let dx = -randomWidth; dx <= randomWidth; dx++) {
             const nx = cellX + dx;
             const ny = cellY + dy;
             if (nx >= 0 && nx < grid[0].length && ny >= 0 && ny < grid.length) {
               grid[ny][nx].alpha = 1;
-              grid[ny][nx].lastPainted = performance.now();
+              grid[ny][nx].lastPainted = currentTime;
             }
           }
         }
@@ -101,7 +102,6 @@ export default function Background() {
         prevCellY = cellY;
       }
     };
-    
 
     const handleMouseMove = (e: MouseEvent) => {
       handleInteraction(e.clientX, e.clientY);
