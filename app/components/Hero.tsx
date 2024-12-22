@@ -1,55 +1,60 @@
 'use client'
+import React from 'react';
+import { motion } from 'framer-motion';
 
-import { motion } from "framer-motion";
-
-export default function Hero() {
+const Hero = () => {
   return (
-    <section className="min-h-screen flex items-center justify-center">
-      <div className="text-center max-w-4xl mx-auto">
-        <motion.h1 
-          className="text-5xl sm:text-7xl font-bold mb-8 text-white tracking-tight"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          Natik Aggarwal
-        </motion.h1>
-        <motion.h2 
-          className="text-xl sm:text-3xl text-blue-200 mb-10 font-medium tracking-wide"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          Software Developer
-        </motion.h2>
-        <motion.p 
-          className="text-lg sm:text-xl max-w-2xl mx-auto text-gray-300 mb-12 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          Building exceptional digital experiences with modern technologies.
-        </motion.p>
-        <motion.div
-          className="space-x-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <a
-            href="#projects"
-            className="inline-block px-8 py-4 rounded-full bg-blue-600 text-white hover:bg-blue-500 transition-all duration-300 font-medium text-lg shadow-lg hover:shadow-blue-500/25"
+    <section className="h-screen fixed inset-0 flex items-center justify-center">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+          {/* Content Side */}
+          <motion.div 
+            className="flex-1 text-center lg:text-left"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            View My Work
-          </a>
-          <a
-            href="#contact"
-            className="inline-block px-8 py-4 rounded-full bg-transparent text-white border border-white/10 hover:bg-white/5 transition-all duration-300 font-medium text-lg"
+            <motion.h1 
+              className="text-5xl sm:text-7xl font-bold mb-6 text-white tracking-tight font-futura"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              Natik Aggarwal
+            </motion.h1>
+
+            <motion.p 
+              className="text-lg sm:text-xl max-w-2xl mx-auto lg:mx-0 text-gray-300 mb-10 leading-relaxed font-raleway"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              Building exceptional digital experiences with modern technologies.
+            </motion.p>
+
+          </motion.div>
+
+          {/* Image Side */}
+          <motion.div 
+            className="flex-1 relative"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            Contact Me
-          </a>
-        </motion.div>
+            <div className="relative w-64 h-64 sm:w-80 sm:h-80 mx-auto">
+              <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-pulse"></div>
+              <img
+                src="https://www.map-this.com/team/natik.png"
+                alt="Natik Aggarwal"
+                className="rounded-full w-full h-full object-cover relative z-10 glass-effect p-2"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full filter blur-xl animate-pulse"></div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
-} 
+};
+
+export default Hero;

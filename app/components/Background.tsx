@@ -1,141 +1,188 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import * as THREE from 'three'
+import { useEffect, useRef } from 'react';
 
-function getRandomPosition(range: number = 50) {
-  return {
-    x: (Math.random() - 0.5) * range,
-    y: Math.random() * 5 + 3,
-    z: (Math.random() - 0.5) * range
-  }
+interface GridCell {
+  x: number;
+  y: number;
+  color: string;
+  alpha: number;
 }
 
 export default function Background() {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // Scene setup
-    const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.3, 1000)
-    const renderer = new THREE.WebGLRenderer({ 
-      alpha: true, 
-      antialias: true,
-    })
-    
-    renderer.setSize(window.innerWidth, window.innerHeight)
-    renderer.setClearColor(0x000000, 1)
-    containerRef.current.appendChild(renderer.domElement)
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    // Add lights
-    const lights: THREE.SpotLight[] = []
-    const targetPositions: { x: number; y: number; z: number }[] = []
-    const currentPositions: { x: number; y: number; z: number }[] = []
-    
+    const CELL_SIZE = 30;
+    const FADE_DURATION = 2000;
+
+    let mouseX = -1;
+    let mouseY = -1;
+    let prevCellX = -1;
+    let prevCellY = -1;
+    let grid: GridCell[][] = [];
+    let lastTime = performance.now();
+
     const colors = [
-        0xff1493, // Deep Pink
-        0x4169e1, // Royal Blue
-        0x32cd32, // Lime Green
-        0xffa500  // Orange
-    ]
+      '#4A9EFF',
+      '#FF4A9E',
+      '#4AFF9E',
+      '#9E4AFF',
+      '#FF9E4A',
+    ];
 
-    // Initialize lights with random positions
-    colors.forEach((color, i) => {
-      const light = new THREE.SpotLight(color, 200)
-      const initialPos = getRandomPosition()
-      light.position.set(initialPos.x, initialPos.y, initialPos.z)
-      light.angle = Math.PI / 3
-      light.penumbra = 0.2
-      light.decay = 0.5
-      light.distance = 40
-      scene.add(light)
-      lights.push(light)
-      
-      currentPositions.push({ ...initialPos })
-      targetPositions.push(getRandomPosition())
-    })
+    const setSize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
 
-    // Add ground plane
-    const geometry = new THREE.PlaneGeometry(50, 50)
-    const material = new THREE.MeshStandardMaterial({ 
-      color: 0x000000,
-      roughness: 0.9,
-      metalness: 0.5
-    })
-    const plane = new THREE.Mesh(geometry, material)
-    plane.rotation.x = -Math.PI * 0.5
-    plane.position.y = 0
-    scene.add(plane)
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
 
-    // Position camera
-    camera.position.set(0, 10, 20)
-    camera.lookAt(0, 0, 0)
+      ctx.scale(dpr, dpr);
 
-    let lastUpdateTime = 0
-    const updateInterval = 5000 // New positions every 5 seconds
+      const cols = Math.ceil(rect.width / CELL_SIZE);
+      const rows = Math.ceil(rect.height / CELL_SIZE);
 
-    // Animation
-    function animate(time: number) {
-      const currentTime = time
+      grid = Array(rows)
+        .fill(null)
+        .map((_, row) =>
+          Array(cols)
+            .fill(null)
+            .map((_, col) => ({
+              x: col * CELL_SIZE,
+              y: row * CELL_SIZE,
+              color: colors[(col + row) % colors.length],
+              alpha: 0,
+              lastPainted: 0,
+            }))
+        );
+    };
 
-      // Update target positions every few seconds
-      if (currentTime - lastUpdateTime > updateInterval) {
-        targetPositions.forEach((target, i) => {
-          const newPos = getRandomPosition()
-          target.x = newPos.x
-          target.y = newPos.y
-          target.z = newPos.z
-        })
-        lastUpdateTime = currentTime
+    const handleInteraction = (x: number, y: number) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = x - rect.left;
+      mouseY = y - rect.top;
+    
+      const cellX = Math.floor(mouseX / CELL_SIZE);
+      const cellY = Math.floor(mouseY / CELL_SIZE);
+    
+      if (
+        (cellX !== prevCellX || cellY !== prevCellY) &&
+        cellX >= 0 &&
+        cellX < grid[0].length &&
+        cellY >= 0 &&
+        cellY < grid.length
+      ) {
+        // Generate a random width between 1 and 3
+        const randomWidth = Math.floor(Math.random() * 0.1) + 1;
+        console.log(randomWidth);
+    
+        // Adjust the range of affected cells based on the random width
+        for (let dy = -randomWidth; dy <= randomWidth; dy++) {
+          for (let dx = -randomWidth; dx <= randomWidth; dx++) {
+            const nx = cellX + dx;
+            const ny = cellY + dy;
+            if (nx >= 0 && nx < grid[0].length && ny >= 0 && ny < grid.length) {
+              grid[ny][nx].alpha = 1;
+              grid[ny][nx].lastPainted = performance.now();
+            }
+          }
+        }
+    
+        prevCellX = cellX;
+        prevCellY = cellY;
+      }
+    };
+    
+
+    const handleMouseMove = (e: MouseEvent) => {
+      handleInteraction(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handleInteraction(touch.clientX, touch.clientY);
+      }
+    };
+
+    const animate = (currentTime: number) => {
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x <= canvas.width; x += CELL_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(Math.floor(x) + 0.5, 0);
+        ctx.lineTo(Math.floor(x) + 0.5, canvas.height);
+        ctx.stroke();
       }
 
-      // Smoothly move lights to target positions
-      lights.forEach((light, i) => {
-        const current = currentPositions[i]
-        const target = targetPositions[i]
-        
-        // Interpolate positions
-        current.x += (target.x - current.x) * 0.01
-        current.y += (target.y - current.y) * 0.01
-        current.z += (target.z - current.z) * 0.01
+      for (let y = 0; y <= canvas.height; y += CELL_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(0, Math.floor(y) + 0.5);
+        ctx.lineTo(canvas.width, Math.floor(y) + 0.5);
+        ctx.stroke();
+      }
 
-        // Update light position
-        light.position.set(current.x, current.y, current.z)
-        light.lookAt(0, 0, 0)
-      })
+      grid.forEach((row) => {
+        row.forEach((cell) => {
+          if (cell.alpha > 0) {
+            const timeSincePaint = currentTime - cell.lastPainted;
+            cell.alpha = Math.max(0, 1 - timeSincePaint / FADE_DURATION);
 
-      renderer.render(scene, camera)
-      requestAnimationFrame(animate)
-    }
+            if (cell.alpha > 0) {
+              const alpha = Math.floor(cell.alpha * 255)
+                .toString(16)
+                .padStart(2, '0');
+              ctx.fillStyle = `${cell.color}${alpha}`;
+              ctx.fillRect(
+                Math.floor(cell.x) + 1,
+                Math.floor(cell.y) + 1,
+                CELL_SIZE - 1,
+                CELL_SIZE - 1
+              );
+            }
+          }
+        });
+      });
 
-    // Handle resize
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight
-      camera.updateProjectionMatrix()
-      renderer.setSize(window.innerWidth, window.innerHeight)
-    }
+      requestAnimationFrame(animate);
+    };
 
-    window.addEventListener('resize', handleResize)
-    animate(0)
+    setSize();
+    window.addEventListener('resize', setSize);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove);
+    requestAnimationFrame(animate);
 
-    // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize)
-      containerRef.current?.removeChild(renderer.domElement)
-      renderer.dispose()
-    }
-  }, [])
+      window.removeEventListener('resize', setSize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
 
   return (
-    <div 
-      ref={containerRef} 
-      className="fixed top-0 left-0 w-full h-full -z-10"
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 w-full h-full -z-10"
       style={{
-        filter: 'blur(200px) brightness(1)',
-        background: '#000000'
+        background: '#000000',
       }}
     />
-  )
-} 
+  );
+}

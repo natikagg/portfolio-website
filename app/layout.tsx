@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
-import Navbar from "./components/Navbar";
+import BottomNav from "./components/BottomNav";
 import ClientLayout from "./components/ClientLayout";
 import Background from "./components/Background";
-import ScrollMeter from "./components/ScrollMeter";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -25,10 +24,9 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.variable} antialiased`}>
         <Background />
-        <ScrollMeter />
         <ClientLayout>
-          <Navbar />
           {children}
+          <BottomNav />
         </ClientLayout>
       </body>
     </html>
